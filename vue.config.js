@@ -10,4 +10,6 @@ module.exports = defineConfig({
     });
   },
 
+  publicPath: '/filetrans',
+  runtimeCompiler: true
 })

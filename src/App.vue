@@ -20,8 +20,13 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col">
+                    <div class="col mb-2">
                         <button class="btn btn-secondary" type="submit">Translate</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        {{ result }}
                     </div>
                 </div>
             </form>
@@ -38,7 +43,9 @@ export default {
     data() {
         return {
             debug: false,
-            countries: []
+            result: null,
+            countries: [],
+            backend_url: ''
         }
     },
 
@@ -47,8 +54,6 @@ export default {
         // Looge ref, kuhu salvestatakse valitud failid
         const selectedFiles = ref([])
         const selectedLang = ref(null)
-        const backend_url = ref(false)
-
 
         // Käitle failide valimist
         const handleFileChange = (event) => {
@@ -61,51 +66,11 @@ export default {
             selectedLang.value = lang
         };
 
-        const uploadFiles = async () => {
-            const url = backend_url.value
-
-            if (!url) {
-                console.error("Backend URL is missing.");
-                return;
-            }
-
-            if (selectedFiles.value.length === 0) {
-                console.error("No files selected.");
-                return;
-            }
-
-            if (!selectedLang.value) {
-                console.error("Language not selected.");
-                return;
-            }
-
-            const formData = new FormData()
-
-            for (let i = 0; i < selectedFiles.value.length; i++) {
-                formData.append("files[]", selectedFiles.value[i])
-            }
-            formData.append("lang", selectedLang.value)
-
-
-            setTimeout(() => {
-                // Kuvame formData objekti konsoolis
-                for (let pair of formData.entries()) {
-                    console.log(pair[0] + ': ' + pair[1]);
-                }
-            }, 100);
-            // try {
-            //     const response = await this.axios.post(url, formData);
-            //     console.log(response.data);
-            // } catch (error) {
-            //     console.error("Üleslaadimine ebaõnnestus: " + error.message);
-            // }
-        }
-
         return {
+            selectedFiles,
+            selectedLang,
             handleFileChange,
-            handleSelectedLang,
-            uploadFiles,
-            backend_url
+            handleSelectedLang
         }
     },
 
@@ -120,6 +85,71 @@ export default {
                 this.countries = (config.general.countries !== undefined) ? config.general.countries.split(',') : false
             }
         })
+    },
+
+    methods: {
+        async uploadFiles() {
+            const url = this.backend_url
+
+            if (!url) {
+                console.error("Backend URL is missing.");
+                return;
+            }
+
+            if (this.selectedFiles.length === 0) {
+                console.error("No files selected.");
+                return;
+            }
+
+            if (!this.selectedLang) {
+                console.error("Language not selected.");
+                return;
+            }
+
+            const formData = new FormData()
+
+            for (let i = 0; i < this.selectedFiles.length; i++) {
+                formData.append("files[]", this.selectedFiles[i])
+            }
+            formData.append("lang", this.selectedLang)
+
+            // for (let i = 0; i < this.selectedFiles.length; i++) {
+            //     const file = this.selectedFiles[i]
+
+            //     // Looge FileReader objekt
+            //     const reader = new FileReader()
+
+            //     // Määrake, mida teha, kui fail on loetud
+            //     reader.onload = (event) => {
+            //         // Faili sisu on event.target.result
+            //         const fileContent = event.target.result
+            //         console.log("File Content:", fileContent)
+
+            //         // Siin saate faili sisuga midagi teha, näiteks saata serverile
+            //     };
+
+            //     // Lugege faili sisu
+            //     reader.readAsText(file);
+            // }
+
+            // setTimeout(() => {
+            //     // Kuvame formData objekti konsoolis
+            //     for (let pair of formData.entries()) {
+            //         console.log(pair[0] + ': ' + pair[1]);
+            //     }
+            // }, 100);
+
+            // console.log(formData.get('files[]'))
+
+            try {
+                const response = await this.axios.post(url, formData);
+                this.result = response.data.result;
+                console.log(response.data);
+            } catch (error) {
+                console.error("Üleslaadimine ebaõnnestus: " + error.message);
+            }
+        }
+
     },
 }
 </script>
