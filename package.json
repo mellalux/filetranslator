@@ -1,0 +1,24 @@
+{
+  "name": "translator",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "@ladjs/consolidate": "^1.0.1",
+    "axios": "^1.4.0",
+    "bootstrap": "^5.3.1",
+    "ini": "^4.1.1",
+    "qs": "^6.11.2",
+    "vue": "^3.2.13",
+    "vue-axios": "^3.5.2"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "~5.0.0",
+    "sass": "^1.66.1",
+    "sass-loader": "^13.3.2",
+    "webpack": "^5.88.1"
+  }
+}
