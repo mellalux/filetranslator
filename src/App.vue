@@ -6,7 +6,7 @@
                 <div class="row mb-2">
                     <div class="col">
                         <div class="input-group">
-                            <input id="fileup" type="file" class="form-control" multiple @change="handleFileChange" />
+                            <input id="fileup" type="file" class="form-control" :accept="fileTypes" multiple @change="handleFileChange" />
                             <label class="input-group-text" for="fileup">Upload</label>
                         </div>
                     </div>
@@ -44,6 +44,7 @@ export default {
         return {
             debug: false,
             result: null,
+            fileTypes: '*',
             countries: [],
             backend_url: ''
         }
@@ -83,12 +84,13 @@ export default {
                 this.debug = (config.general.debug !== undefined) ? config.general.debug : false
                 this.backend_url = (config.general.backend_url !== undefined) ? config.general.backend_url : false
                 this.countries = (config.general.countries !== undefined) ? config.general.countries.split(',') : false
+                this.fileTypes = (config.general.fileTypes !== undefined) ? config.general.fileTypes : '*'
             }
         })
     },
 
     methods: {
-        async uploadFiles() {
+        uploadFiles() {
             const url = this.backend_url
 
             if (!url) {
@@ -108,46 +110,44 @@ export default {
 
             const formData = new FormData()
 
-            for (let i = 0; i < this.selectedFiles.length; i++) {
-                formData.append("files[]", this.selectedFiles[i])
-            }
+            // for (let i = 0; i < this.selectedFiles.length; i++) {
+            //     formData.append("files[]", this.selectedFiles[i])
+            // }
             formData.append("lang", this.selectedLang)
 
-            // for (let i = 0; i < this.selectedFiles.length; i++) {
-            //     const file = this.selectedFiles[i]
+            for (let i = 0; i < this.selectedFiles.length; i++) {
+                const file = this.selectedFiles[i];
 
-            //     // Looge FileReader objekt
-            //     const reader = new FileReader()
+                // Looge FileReader objekt
+                const reader = new FileReader();
 
-            //     // Määrake, mida teha, kui fail on loetud
-            //     reader.onload = (event) => {
-            //         // Faili sisu on event.target.result
-            //         const fileContent = event.target.result
-            //         console.log("File Content:", fileContent)
+                // Määrake, mida teha, kui fail on loetud
+                reader.onload = async (event) => {
+                    // Faili sisu on event.target.result
+                    let fileContent = event.target.result;
+                    const fileName = file.name;
+                    console.log("File Name:", fileName);
 
-            //         // Siin saate faili sisuga midagi teha, näiteks saata serverile
-            //     };
+                    // Siin saate faili sisuga midagi teha, näiteks saata serverile
+                    fileContent = 'Changed';
 
-            //     // Lugege faili sisu
-            //     reader.readAsText(file);
-            // }
+                    // Looge uus FormData objekt igale failile ja lisage faili sisu
+                    const formData = new FormData();
+                    formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName);
 
-            // setTimeout(() => {
-            //     // Kuvame formData objekti konsoolis
-            //     for (let pair of formData.entries()) {
-            //         console.log(pair[0] + ': ' + pair[1]);
-            //     }
-            // }, 100);
+                    try {
+                        const response = await this.axios.post(url, formData);
+                        this.result = response.data.result;
+                        console.log(response.data);
+                    } catch (error) {
+                        console.error("Üleslaadimine ebaõnnestus: " + error.message);
+                    }
+                };
 
-            // console.log(formData.get('files[]'))
-
-            try {
-                const response = await this.axios.post(url, formData);
-                this.result = response.data.result;
-                console.log(response.data);
-            } catch (error) {
-                console.error("Üleslaadimine ebaõnnestus: " + error.message);
+                // Lugege faili sisu
+                reader.readAsText(file);
             }
+
         }
 
     },
