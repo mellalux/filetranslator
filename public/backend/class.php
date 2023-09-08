@@ -8,6 +8,7 @@ class FILETRANSLATOR
     private $postData;
     private $fileData;
     private $uploadDir;
+    private $dateLangDir;
     public $results = [];
 
     // Constructor
@@ -15,6 +16,8 @@ class FILETRANSLATOR
     {
         $this->postData = $_POST;
         $this->fileData = $_FILES;
+        $this->dateLangDir = date('Ymd') . DIRECTORY_SEPARATOR . $this->postData['lang'];
+        $this->log_info($this->dateLangDir);
     }
 
     // Destructor
@@ -25,8 +28,11 @@ class FILETRANSLATOR
     public function processFormData()
     {
         // POST
-        if (isset($this->postData['field_name'])) {
-            $fieldValue = $this->postData['field_name'];
+
+        if (isset($this->postData['func']) && $this->postData['func'] === 'openai') {
+            $this->log_info($this->postData['func']);
+            $this->log_info($this->postData['text']);
+            return $this->openai($this->postData['text']);
         }
 
         // FILES
@@ -40,9 +46,9 @@ class FILETRANSLATOR
         $this->results['error'] = $error;
     }
 
-    public function log_errors($text = null)
+    public function log_info($text = null)
     {
-        $file = DATADIR . DIRECTORY_SEPARATOR . LOG_ERROR;
+        $file = DATADIR . DIRECTORY_SEPARATOR . LOG_IMFO;
         $time = date("Y-m-d H:i:s");
         if (strlen($text) > 0) {
             $message = "$time -> $text";
@@ -53,7 +59,7 @@ class FILETRANSLATOR
 
     private function checkDirectory () {
         // Kataloog, kuhu failid salvestatakse
-        $this->uploadDir = DATADIR. DIRECTORY_SEPARATOR . date('Ymd');
+        $this->uploadDir = DATADIR. DIRECTORY_SEPARATOR . $this->dateLangDir;
 
         // Veenduge, et kataloog eksisteerib
         if (!file_exists($this->uploadDir)) {
@@ -73,7 +79,8 @@ class FILETRANSLATOR
                 $targetPath = $this->uploadDir . DIRECTORY_SEPARATOR . $fileName;
 
                 if (move_uploaded_file($tmpName, $targetPath)) {
-                    $this->results['result'] .= "File $fileName uploaded successfully...";
+                    $public_url =  PUBLIC_DATA . DIRECTORY_SEPARATOR . $this->dateLangDir . DIRECTORY_SEPARATOR . $fileName;
+                    $this->results['result'] .= "File '<a href=\"$public_url\">$fileName</a>' uploaded successfully...";
                 } else {
                     $this->error("Upload failed for file $fileName!");
                 }
