@@ -26,11 +26,12 @@
                 </div>
             </form>
 
-            <div class="row">
+            <div v-if="results.length > 0" class="row my-3">
                 <div class="col">
-                    <ul v-if="results">
+                    <h5>Results:</h5>
+                    <ol>
                         <li v-for="(result, i) in results" :key="i" v-html="result"></li>
-                    </ul>
+                    </ol>
                 </div>
             </div>
 
