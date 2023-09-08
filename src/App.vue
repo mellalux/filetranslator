@@ -24,16 +24,33 @@
                         <button class="btn btn-secondary" type="submit">Translate</button>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col">
-                        <ul v-if="results">
-                            <li v-for="(result, i) in results" :key="i" v-html="result"></li>
-                        </ul>
-                    </div>
-                </div>
             </form>
+
+            <div class="row">
+                <div class="col">
+                    <ul v-if="results">
+                        <li v-for="(result, i) in results" :key="i" v-html="result"></li>
+                    </ul>
+                </div>
+            </div>
+
         </div>
+
+        <div v-if="overlay" class="overlay">
+            <div class="row position-absolute top-50 start-50 translate-middle">
+                <div class="col">
+                    <div class="spinner-border text-success" style="width: 10rem; height: 10rem" role="status"></div>
+                </div>
+            </div>
+            <div class="row position-absolute top-50 start-50 translate-middle">
+                <div class="col">
+                    <span class="process justify-content-center"> Working... </span>
+                </div>
+            </div>
+        </div>
+
     </div>
+
 </template>
 
 <script>
@@ -50,7 +67,8 @@ export default {
             fileTypes: '*',
             countries: [],
             backend_url: '',
-            aiCommand: false
+            aiCommand: false,
+            overlay: false
         }
     },
 
@@ -100,47 +118,48 @@ export default {
                 return
             }
 
-            for (let i = 0; i < this.selectedFiles.length; i++) {
-                const file = this.selectedFiles[i]
+            this.overlay = true
 
-                // Looge FileReader objekt
-                const reader = new FileReader()
+            const uploadPromises = this.selectedFiles.map(async (file) => {
+                return new Promise(async (resolve, reject) => {
+                    const reader = new FileReader()
+                    reader.onload = async (event) => {
+                        const Content = event.target.result
+                        const fileName = file.name
 
-                // Määrake, mida teha, kui fail on loetud
-                reader.onload = async (event) => {
-                    // Faili sisu on event.target.result
-                    const Content = event.target.result
-                    const fileName = file.name
-                    
-                    // Siin saate faili sisuga midagi teha, näiteks saata serverile
+                        const cmd = this.aiCommand.replace("[lang]", this.selectedLang)
+                        const command = cmd + ' ' + Content
+                        const formData = new FormData()
 
-                    const cmd = this.aiCommand.replace("[lang]", this.selectedLang)
-                    const command = cmd + ' ' + Content
-                    const formData = new FormData()
+                        try {
+                            const fileContent = await this.OpenAI(command)
+                            formData.append("lang", this.selectedLang)
+                            formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName)
+                        } catch (error) {
+                            console.error('OpenAI error:', error)
+                        }
 
-                    // Kasutage this.OpenAI meetodit
-                    try {
-                        // Kasutage this.OpenAI meetodit ja oodake vastuse saamist
-                        const fileContent = await this.OpenAI(command)
-                        formData.append("lang", this.selectedLang)
-                        formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName)
-                    } catch (error) {
-                        console.error('OpenAI error:', error)
-                    }                    
-
-                    try {
-                        const response = await this.axios.post(url, formData)
-                        this.results.push(response.data.result)
-                    } catch (error) {
-                        console.error("Upload failed: " + error.message)
+                        try {
+                            const response = await this.axios.post(url, formData)
+                            this.results.push(response.data.result)
+                            resolve()
+                        } catch (error) {
+                            console.error("Upload failed: " + error.message)
+                            reject(error)
+                        }
                     }
-                }
 
-                // Lugege faili sisu
-                reader.readAsText(file)
+                    reader.readAsText(file)
+                })
+            })
+
+            try {
+                await Promise.all(uploadPromises)
+            } catch (error) {
+                console.error("One or more file uploads failed.")
             }
 
-        }
+            this.overlay = false        }
 
     },
 
@@ -187,6 +206,26 @@ export default {
 }
 </script>
 
-<style lang="less">
+<style lang="scss">
+
+.overlay {
+    position: fixed;
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.75;
+    background-color: white;
+    z-index: 2000;
+}
+
+.process {
+    font-size: 300%;
+    font-weight: bold;
+    color: white;
+    -webkit-text-stroke-width: 2px;
+    -webkit-text-stroke-color: black;
+}
 
 </style>

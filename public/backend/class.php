@@ -80,7 +80,7 @@ class FILETRANSLATOR
 
                 if (move_uploaded_file($tmpName, $targetPath)) {
                     $public_url =  PUBLIC_DATA . DIRECTORY_SEPARATOR . $this->dateLangDir . DIRECTORY_SEPARATOR . $fileName;
-                    $this->results['result'] .= "File '<a href=\"$public_url\">$fileName</a>' uploaded successfully...";
+                    $this->results['result'] .= "File '<a href=\"$public_url\" target=\"_blank\">$fileName</a>' uploaded successfully...";
                 } else {
                     $this->error("Upload failed for file $fileName!");
                 }
