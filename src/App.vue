@@ -122,21 +122,17 @@ export default {
                     try {
                         // Kasutage this.OpenAI meetodit ja oodake vastuse saamist
                         const fileContent = await this.OpenAI(command)
-                        console.log(fileContent)
-
                         formData.append("lang", this.selectedLang)
                         formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName)
                     } catch (error) {
                         console.error('OpenAI error:', error)
-                    }
-                    
+                    }                    
 
                     try {
                         const response = await this.axios.post(url, formData)
                         this.results.push(response.data.result)
-                        console.log(response.data)
                     } catch (error) {
-                        console.error("Üleslaadimine ebaõnnestus: " + error.message)
+                        console.error("Upload failed: " + error.message)
                     }
                 }
 
