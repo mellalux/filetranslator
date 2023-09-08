@@ -84,8 +84,6 @@ export default {
                     }
 
                     const response = await this.axios.post(url, qs.stringify(params))
-
-                    console.log(response)
                     if (response.data.data.choices) {
                         return response.data.data.choices[0].message.content
                     } else {

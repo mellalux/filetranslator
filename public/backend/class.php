@@ -17,7 +17,6 @@ class FILETRANSLATOR
         $this->postData = $_POST;
         $this->fileData = $_FILES;
         $this->dateLangDir = date('Ymd') . DIRECTORY_SEPARATOR . $this->postData['lang'];
-        $this->log_info($this->dateLangDir);
     }
 
     // Destructor
@@ -28,10 +27,7 @@ class FILETRANSLATOR
     public function processFormData()
     {
         // POST
-
         if (isset($this->postData['func']) && $this->postData['func'] === 'openai') {
-            $this->log_info($this->postData['func']);
-            $this->log_info($this->postData['text']);
             return $this->openai($this->postData['text']);
         }
 
