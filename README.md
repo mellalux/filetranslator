@@ -1,4 +1,4 @@
-# translator
+# The File Translator
 
 ## Project setup
 ```

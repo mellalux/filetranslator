@@ -1,7 +1,16 @@
 <template>
     <div class="container-fluid bg-secondary bg-gradient min-vh-100 m-0 p-5 w-100">
-        <div class="container bg-white mt-3 p-5">
-            <h1>Translate the Files</h1>
+        <div class="container bg-white mt-3 p-5 rounded-5 shadow">
+            <div class="row">
+                <div class="col align-bottom">
+                    <h1>Translate the Files</h1>
+                </div>
+                <div class="col mb-3">
+                    <a href="https://www.mella.ee" target="_blank">
+                        <img src="@/assets/logo.png" width="100" class="img-fluid float-end" alt="Author" />
+                    </a>
+                </div>
+            </div>
             <form @submit.prevent="uploadFiles">
                 <div class="row mb-2">
                     <div class="col">
@@ -34,30 +43,33 @@
                     </ol>
                 </div>
             </div>
+            
+            <div class="text-center">Copyright &copy; Meelis Luks</div>
+            
+            <Error :error="error" :visible="visible" @update-visible="updateVisible" />
 
         </div>
-
-        <div v-if="overlay" class="overlay">
-            <div class="row position-absolute top-50 start-50 translate-middle">
-                <div class="col">
-                    <div class="spinner-border text-success" style="width: 10rem; height: 10rem" role="status"></div>
-                </div>
-            </div>
-            <div class="row position-absolute top-50 start-50 translate-middle">
-                <div class="col">
-                    <span class="process justify-content-center"> Working... </span>
-                </div>
-            </div>
-        </div>
-
     </div>
 
+    <div v-if="overlay" class="overlay">
+        <div class="row position-absolute top-50 start-50 translate-middle">
+            <div class="col">
+                <div class="spinner-border text-success" style="width: 10rem; height: 10rem" role="status"></div>
+            </div>
+        </div>
+        <div class="row position-absolute top-50 start-50 translate-middle">
+            <div class="col">
+                <span class="process justify-content-center"> Working... </span>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
 import { ref } from "vue"
 import qs from "qs"
 import ini from "ini"
+import Error from "@/components/error"
 
 export default {
 
@@ -69,10 +81,16 @@ export default {
             countries: [],
             backend_url: '',
             aiCommand: false,
-            overlay: false
+            overlay: false,
+            error: '',
+            visible: false
         }
     },
 
+    components: {
+        Error
+    },
+    
     methods: {
  
         async OpenAI(cmd) {
@@ -86,15 +104,18 @@ export default {
 
                     const response = await this.axios.post(url, qs.stringify(params))
                     if (response.data.data.choices) {
+                        this.error = (response.data.error !== undefined) ? response.data.error : ''
                         return response.data.data.choices[0].message.content
                     } else {
+                        this.error = 'No data from OpenAI'
                         throw new Error('No data from OpenAI')
                     }
                 } else {
+                    this.error = 'Invalid command from OpenAI'
                     throw new Error('Invalid command')
                 }
             } catch (error) {
-                console.error('OpenAI error:', error)
+                this.error = 'OpenAI error: ' + error
                 throw error
             }
         },
@@ -103,17 +124,17 @@ export default {
             const url = this.backend_url
 
             if (!url) {
-                console.error("Backend URL is missing.")
+                this.error = "Backend URL is missing in config.ini..."
                 return
             }
 
             if (this.selectedFiles.length === 0) {
-                console.error("No files selected.")
+                this.error = "No files selected..."
                 return
             }
 
             if (!this.selectedLang) {
-                console.error("Language not selected.")
+                this.error = "Language not selected..."
                 return
             }
 
@@ -135,15 +156,16 @@ export default {
                             formData.append("lang", this.selectedLang)
                             formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName)
                         } catch (error) {
-                            console.error('OpenAI error:', error)
+                            this.error = 'OpenAI error: ' + error
                         }
 
                         try {
                             const response = await this.axios.post(url, formData)
+                            this.error = (response.data.error !== undefined) ? response.data.error : ''
                             this.results.push(response.data.result)
                             resolve()
                         } catch (error) {
-                            console.error("Upload failed: " + error.message)
+                            this.error = "Upload failed: " + error.message
                             reject(error)
                         }
                     }
@@ -155,10 +177,15 @@ export default {
             try {
                 await Promise.all(uploadPromises)
             } catch (error) {
-                console.error("One or more file uploads failed.")
+                this.error = "One or more file uploads failed..."
             }
 
-            this.overlay = false        }
+            this.overlay = false        
+        },
+
+        updateVisible (visible) {
+            this.visible = visible
+        }
 
     },
 
@@ -200,7 +227,16 @@ export default {
                 this.aiCommand = (config.general.aiCommand !== undefined) ? config.general.aiCommand : false
             }
         })
-    }
+    },
+
+    watch: {
+        error: function() {
+            if (this.error.length > 0) this.visible = true
+        },
+        visible: function() {
+            if (!this.visible) this.error = ''
+        }
+    },
 
 }
 </script>
