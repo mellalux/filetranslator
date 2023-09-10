@@ -24,7 +24,7 @@
                     <div class="col">
                         <select class="form-select" aria-label="Choose Language" @change="handleSelectedLang">
                             <option selected>Choose Language</option>
-                            <option v-for="country in countries" :key="country" :value="country"> {{ country }} </option>
+                            <option v-for="language in languages" :key="language" :value="language"> {{ language }} </option>
                         </select>
                     </div>
                 </div>
@@ -75,10 +75,9 @@ export default {
 
     data() {
         return {
-            debug: false,
             results: [],
             fileTypes: '*',
-            countries: [],
+            languages: [],
             backend_url: '',
             aiCommand: false,
             overlay: false,
@@ -220,9 +219,8 @@ export default {
         this.axios.get(process.env.BASE_URL + "config.ini?" + Date.now()).then(res => {
             let config = ini.parse(res.data)
             if (config) {
-                this.debug = (config.general.debug !== undefined) ? config.general.debug : false
                 this.backend_url = (config.general.backend_url !== undefined) ? config.general.backend_url : false
-                this.countries = (config.general.countries !== undefined) ? config.general.countries.split(',') : false
+                this.languages = (config.general.languages !== undefined) ? config.general.languages.split(',') : false
                 this.fileTypes = (config.general.fileTypes !== undefined) ? config.general.fileTypes : '*'
                 this.aiCommand = (config.general.aiCommand !== undefined) ? config.general.aiCommand : false
             }

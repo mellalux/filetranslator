@@ -42,7 +42,6 @@ export default {
     watch: {
         visible: function(newVal,oldVal) {
             this.OpenClose = newVal
-            console.log('new' + newVal + '==' + oldVal)
         }
     }
         
