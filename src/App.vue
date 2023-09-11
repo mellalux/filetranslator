@@ -92,7 +92,7 @@ export default {
     
     methods: {
         
-        async uploadFiles() {
+        uploadFiles() {
             const url = this.backend_url
 
             if (!url) {
@@ -110,39 +110,32 @@ export default {
                 return
             }
 
-            this.overlay = true
+            this.overlay = true;
 
-            const uploadPromises = this.selectedFiles.map(async (file) => {
-                return new Promise(async (resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.onload = async (event) => {
-                        const formData = new FormData()
-                        formData.append("lang", this.selectedLang)
-                        formData.append("aiCommand", this.aiCommand)
-                        formData.append("files[]", file)
+            const promises = this.selectedFiles.map(async (file) => {
+                const formData = new FormData();
+                formData.append("lang", this.selectedLang);
+                formData.append("aiCommand", this.aiCommand);
+                formData.append("files[]", file);
 
-                        try {
-                            const response = await this.axios.post(url, formData)
-                            if (response.data.error !== undefined) this.error = response.data.error
-                            this.results.push(response.data.result)
-                            resolve()
-                        } catch (error) {
-                            this.error = "Upload failed: " + error.message
-                            reject(error)
-                        }
+                try {
+                    const response = await this.axios.post(url, formData);
+                    if (response.data.result) {
+                        this.results.push(response.data.result);
                     }
+                    if (response.data.error !== undefined) {
+                        this.error = response.data.error;
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            });
 
-                    reader.readAsText(file)
-                })
-            })
+            // Oodake kõikide päringute lõppemist Promise.all abil
+            Promise.all(promises).then(() => {
+                this.overlay = false; // Kui kõik päringud on lõpetatud, muutke overlay väärtust
+            });
 
-            try {
-                await Promise.all(uploadPromises)
-            } catch (error) {
-                this.error = "One or more file uploads failed..."
-            }
-
-            this.overlay = false        
         },
 
         updateVisible (visible) {
