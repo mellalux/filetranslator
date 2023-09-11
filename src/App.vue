@@ -91,33 +91,6 @@ export default {
     },
     
     methods: {
- 
-        async OpenAI(cmd) {
-            try {
-                if (cmd.length > 0) {
-                    const url = this.backend_url
-                    const params = {
-                        func: 'openai',
-                        text: cmd
-                    }
-
-                    const response = await this.axios.post(url, qs.stringify(params))
-                    if (response.data.data.choices) {
-                        this.error = (response.data.error !== undefined) ? response.data.error : ''
-                        return response.data.data.choices[0].message.content
-                    } else {
-                        this.error = 'No data from OpenAI'
-                        throw new Error('No data from OpenAI')
-                    }
-                } else {
-                    this.error = 'Invalid command from OpenAI'
-                    throw new Error('Invalid command')
-                }
-            } catch (error) {
-                this.error = 'OpenAI error: ' + error
-                throw error
-            }
-        },
         
         async uploadFiles() {
             const url = this.backend_url
@@ -143,24 +116,15 @@ export default {
                 return new Promise(async (resolve, reject) => {
                     const reader = new FileReader()
                     reader.onload = async (event) => {
-                        const Content = event.target.result
-                        const fileName = file.name
-
-                        const cmd = this.aiCommand.replace("[lang]", this.selectedLang)
-                        const command = cmd + ' ' + Content
                         const formData = new FormData()
-
-                        try {
-                            const fileContent = await this.OpenAI(command)
-                            formData.append("lang", this.selectedLang)
-                            formData.append("files[]", new Blob([fileContent], { type: "text/plain" }), fileName)
-                        } catch (error) {
-                            this.error = 'OpenAI error: ' + error
-                        }
+                        formData.append("lang", this.selectedLang)
+                        formData.append("aiCommand", this.aiCommand)
+                        formData.append("files[]", file)
 
                         try {
                             const response = await this.axios.post(url, formData)
-                            this.error = (response.data.error !== undefined) ? response.data.error : ''
+                            console.log(response)
+                            if (response.data.error !== undefined) this.error = response.data.error
                             this.results.push(response.data.result)
                             resolve()
                         } catch (error) {

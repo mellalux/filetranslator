@@ -26,11 +26,6 @@ class FILETRANSLATOR
 
     public function processFormData()
     {
-        // POST
-        if (isset($this->postData['func']) && $this->postData['func'] === 'openai') {
-            return $this->openai($this->postData['text']);
-        }
-
         // FILES
         if (count($this->fileData) > 0) {
             return $this->saveFiles();
@@ -73,13 +68,23 @@ class FILETRANSLATOR
             foreach ($this->fileData['files']['name'] as $key => $fileName) {
                 $tmpName = $this->fileData['files']['tmp_name'][$key];
                 $targetPath = $this->uploadDir . DIRECTORY_SEPARATOR . $fileName;
+                $public_url =  PUBLIC_DATA . DIRECTORY_SEPARATOR . $this->dateLangDir . DIRECTORY_SEPARATOR . $fileName;
+                $fileContent = file_get_contents($tmpName);
+                $aiCommand = str_replace("[lang]", $this->postData['lang'], $this->postData['aiCommand']) . " $fileContent";
+                $modifiedContent = $this->openai($aiCommand);
 
-                if (move_uploaded_file($tmpName, $targetPath)) {
-                    $public_url =  PUBLIC_DATA . DIRECTORY_SEPARATOR . $this->dateLangDir . DIRECTORY_SEPARATOR . $fileName;
-                    $this->results['result'] .= "File '<a href=\"$public_url\" target=\"_blank\">$fileName</a>' uploaded successfully...";
+                if ($modifiedContent !== false) {
+                    if (file_put_contents($targetPath, $modifiedContent) !== false) {
+                        $this->results['result'] .= "File '<a href=\"$public_url\" target=\"_blank\">$fileName</a>' uploaded successfully...";
+                        $this->log_info($this->results['result']);
+                    } else {
+                        $this->error("Upload failed for file $fileName!");
+                    }
                 } else {
-                    $this->error("Upload failed for file $fileName!");
+                    $this->error("Error with translating contents!");
                 }
+
+                unlink($tmpName);
             }
         }
         return json_encode($this->results);
@@ -111,14 +116,16 @@ class FILETRANSLATOR
 
         $response = curl_exec($ch);
 
-        if (curl_errno($ch)) {
-            $this->error('Error:' . curl_error($ch));
+        if ($response === false) {
+            $this->error('Error: ' . curl_error($ch));
+            $res = false;
         } else {
-            $this->results['data'] = json_decode($response, true);;
+            $data = json_decode($response);
+            $res = $data->choices[0]->message->content;
         }
 
         curl_close($ch);
-        return json_encode($this->results);
+        return $res;
     }
 
 }

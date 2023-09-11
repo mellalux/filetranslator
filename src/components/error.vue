@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Modal -->
-        <div v-if="OpenClose" class="modal fade show" tabindex="-1" aria-labelledby="exampleModalLabel" aria-modal="true"
+        <div v-if="OpenClose" class="modal fade show" aria-labelledby="errorModalLabel" aria-modal="true"
             role="dialog" style="display:block">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
