@@ -123,7 +123,6 @@ export default {
 
                         try {
                             const response = await this.axios.post(url, formData)
-                            console.log(response)
                             if (response.data.error !== undefined) this.error = response.data.error
                             this.results.push(response.data.result)
                             resolve()

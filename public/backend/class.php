@@ -28,7 +28,8 @@ class FILETRANSLATOR
     {
         // FILES
         if (count($this->fileData) > 0) {
-            return $this->saveFiles();
+            $this->log_info("Processing...");
+            echo $this->saveFiles();
         }
     }
     
@@ -75,8 +76,7 @@ class FILETRANSLATOR
 
                 if ($modifiedContent !== false) {
                     if (file_put_contents($targetPath, $modifiedContent) !== false) {
-                        $this->results['result'] .= "File '<a href=\"$public_url\" target=\"_blank\">$fileName</a>' uploaded successfully...";
-                        $this->log_info($this->results['result']);
+                        $this->results['result'] .= "File '<a href=\"$public_url\" download>$fileName</a>' uploaded successfully...";
                     } else {
                         $this->error("Upload failed for file $fileName!");
                     }
@@ -130,5 +130,5 @@ class FILETRANSLATOR
 
 }
 
-$fileTrans = new FILETRANSLATOR();
-echo $fileTrans->processFormData();
+$FT = new FILETRANSLATOR();
+$FT->processFormData();
