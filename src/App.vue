@@ -67,7 +67,6 @@
 
 <script>
 import { ref } from "vue"
-import qs from "qs"
 import ini from "ini"
 import Error from "@/components/error"
 
