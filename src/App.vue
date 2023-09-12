@@ -133,9 +133,8 @@ export default {
                     if (response.data.error !== undefined) {
                         this.error = response.data.error;
                     }
-                    console.log(response.data)
                 } catch (error) {
-                    console.error(error);
+                    console.log(error);
                 }
             });
 
