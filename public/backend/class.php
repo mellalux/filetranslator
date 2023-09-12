@@ -53,6 +53,11 @@ class FILETRANSLATOR
         // Kataloog, kuhu failid salvestatakse
         $this->uploadDir = DATADIR. DIRECTORY_SEPARATOR . $this->dateLangDir;
 
+        if (!is_readable(DATADIR)) {
+            $this->error('Diretory "' . DATADIR . '" does not exist or is not writable...');
+            return false;
+        }
+
         // Veenduge, et kataloog eksisteerib
         if (!file_exists($this->uploadDir)) {
             if (!mkdir($this->uploadDir, 0775, true)) {
@@ -71,10 +76,10 @@ class FILETRANSLATOR
                 $targetPath = $this->uploadDir . DIRECTORY_SEPARATOR . $fileName;
                 $public_url =  PUBLIC_DATA . DIRECTORY_SEPARATOR . $this->dateLangDir . DIRECTORY_SEPARATOR . $fileName;
                 $fileContent = file_get_contents($tmpName);
-                $aiCommand = str_replace("[lang]", $this->postData['lang'], $this->postData['aiCommand']) . " $fileContent";
-                $modifiedContent = $this->openai($aiCommand);
+                $aiCommand = str_replace("[lang]", $this->postData['lang'], $this->postData['aiCommand']);
+                $modifiedContent = $this->openai($aiCommand, $fileContent);
 
-                if ($modifiedContent !== false) {
+                if (isset($modifiedContent)) {
                     if (file_put_contents($targetPath, $modifiedContent) !== false) {
                         $this->results['result'] .= "File '<a href=\"$public_url\" download>$fileName</a>' uploaded successfully...";
                     } else {
@@ -90,21 +95,26 @@ class FILETRANSLATOR
         return json_encode($this->results);
     }
 
-    public function openai($text)
+    public function openai($system, $user)
     {
         $apiUrl = 'https://api.openai.com/v1/chat/completions';
-
-        $data = [
-            'model' => 'gpt-3.5-turbo',
-            'messages' => [
-                ['role' => 'system',  'content' => $text],
-                //[ 'role' => "user", 'content' => 'Hello!' ]
-            ]
-        ];
 
         $headers = [
             'Content-Type: application/json',
             'Authorization: Bearer ' . OPENAI_API_KEY,
+        ];
+
+        $data = [
+            'model' => 'gpt-3.5-turbo-16k',
+            'messages' => [
+                ["role" => "system", "content" => $system],
+                ["role" => "user", "content" => $user]
+            ],
+            "temperature" => 0,
+            "max_tokens" => 13000,
+            "top_p" => 1,
+            "frequency_penalty" => 0,
+            "presence_penalty" => 0
         ];
 
         $ch = curl_init();
@@ -116,16 +126,16 @@ class FILETRANSLATOR
 
         $response = curl_exec($ch);
 
-        if ($response === false) {
-            $this->error('Error: ' . curl_error($ch));
-            $res = false;
+        // Decode the JSON data
+        $data = json_decode($response);
+
+        if (isset($data->error->code)) {
+            $this->error($data->error->code . ' - ' . $data->error->message);
         } else {
-            $data = json_decode($response);
-            $res = $data->choices[0]->message->content;
+            return $data->choices[0]->message->content;
         }
 
         curl_close($ch);
-        return $res;
     }
 
 }

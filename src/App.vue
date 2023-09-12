@@ -15,17 +15,23 @@
                 <div class="row mb-2">
                     <div class="col">
                         <div class="input-group">
-                            <input id="fileup" type="file" class="form-control" :accept="fileTypes" multiple @change="handleFileChange" />
+                            <input id="fileup" type="file" :class="validFiles" class="form-control" :accept="fileTypes" multiple @change="handleFileChange" />
                             <label class="input-group-text" for="fileup">Upload</label>
+                        </div>
+                        <div class="invalid-feedback">
+                            Please select file(s).
                         </div>
                     </div>
                 </div>
                 <div class="row mb-2">
                     <div class="col">
-                        <select class="form-select" aria-label="Choose Language" @change="handleSelectedLang">
+                        <select :class="validLang" class="form-select" aria-label="Choose Language" @change="handleSelectedLang">
                             <option selected>Choose Language</option>
                             <option v-for="language in languages" :key="language" :value="language"> {{ language }} </option>
                         </select>
+                        <div class="invalid-feedback">
+                            Language has not been selected.
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -101,11 +107,13 @@ export default {
 
             if (this.selectedFiles.length === 0) {
                 this.error = "No files selected..."
+                this.validFiles = 'is-invalid'
                 return
             }
 
             if (!this.selectedLang) {
                 this.error = "Language not selected..."
+                this.validLang = 'is-invalid'
                 return
             }
 
@@ -125,6 +133,7 @@ export default {
                     if (response.data.error !== undefined) {
                         this.error = response.data.error;
                     }
+                    console.log(response.data)
                 } catch (error) {
                     console.error(error);
                 }
@@ -148,37 +157,59 @@ export default {
         // Looge ref, kuhu salvestatakse valitud failid
         const selectedFiles = ref([])
         const selectedLang = ref(null)
+        const validFiles = ref('')
+        const validLang = ref('')
 
         // Käitle failide valimist
         const handleFileChange = (event) => {
             const files = event.target.files
             selectedFiles.value = Array.from(files)
+            validFiles.value = ''
         }
 
         const handleSelectedLang = (event) => {
             const lang = event.target.value
             selectedLang.value = lang
+            validLang.value = ''
         }
 
         return {
             selectedFiles,
             selectedLang,
+            validFiles,
+            validLang,
             handleFileChange,
             handleSelectedLang
         }
     },
 
     created() {
-        console.log("Loading some settings from ini-file...")
-
         this.axios.get(process.env.BASE_URL + "config.ini?" + Date.now()).then(res => {
             let config = ini.parse(res.data)
             if (config) {
-                this.backend_url = (config.general.backend_url !== undefined) ? config.general.backend_url : false
-                this.languages = (config.general.languages !== undefined) ? config.general.languages.split(',') : false
-                this.fileTypes = (config.general.fileTypes !== undefined) ? config.general.fileTypes : '*'
-                this.aiCommand = (config.general.aiCommand !== undefined) ? config.general.aiCommand : false
+                if (config.general.backend_url !== undefined) {
+                    this.backend_url = config.general.backend_url
+                } else {
+                    this.error = 'Please specify the exact address of "backend_url" in the config.ini file.'
+                }
+                if (config.general.languages !== undefined) {
+                    this.languages = config.general.languages.split(',')
+                } else {
+                    this.error = 'The configuration file config.ini is missing the variable "languages", which contains a list of languages.'
+                }
+                if (config.general.fileTypes !== undefined) {
+                    this.fileTypes = config.general.fileTypes
+                } else {
+                    this.error = 'The configuration file config.ini is missing the variable "fileTypes" and the list of file types.'
+                }
+                if (config.general.aiCommand !== undefined) {
+                    this.aiCommand = config.general.aiCommand
+                } else {
+                    this.error = 'The configuration file config.ini is missing the description for "aiCommand" for artificial intelligence.'
+                }
             }
+        }).catch((error) => {
+            this.error = 'Configuration file config.ini was not found.'
         })
     },
 
