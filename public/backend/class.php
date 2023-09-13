@@ -85,10 +85,7 @@ class FILETRANSLATOR
                     } else {
                         $this->error("Upload failed for file $fileName!");
                     }
-                } else {
-                    $this->error("Error with translating contents!");
                 }
-
                 unlink($tmpName);
             }
         }
